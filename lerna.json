@@ -1,0 +1,11 @@
+{
+  "version": "independent",
+  "command": {
+    "publish": {
+      "allowBranch": "main",
+      "conventionalCommits": true,
+      "registry": "https://gitlab.prematch.cloud/api/v4/projects/85/packages/npm/",
+      "message": "chore(release): publish packages [skip ci]"
+    }
+  }
+} 

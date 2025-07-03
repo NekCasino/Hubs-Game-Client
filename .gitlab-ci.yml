@@ -1,0 +1,50 @@
+image:
+  name: "$PUBLIC_ECR_REGISTRY_URL/docker/library/node:20-alpine"
+  pull_policy: if-not-present
+
+variables:
+  GL_TOKEN: ${CI_JOB_TOKEN}
+  NODE_OPTIONS: "--max-old-space-size=4096"
+
+stages:
+  - build
+
+default:
+  cache:  # Cache modules using lock file
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+
+"Publish":
+  stage: build
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+(-.+.\d+)?$/
+      when: always
+    - when: never
+
+  before_script:
+    - apk add --no-cache bash git curl protobuf
+    # Verify protoc installation
+    - protoc --version || (echo "protoc not found" && exit 1)
+
+    - echo "@platform:registry=https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/" > .npmrc
+    - echo "//${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" >> .npmrc
+    - export PACKAGE_NAME=$(node -p "require('./package.json').name")
+    - export PACKAGE_VERSION=$CI_COMMIT_TAG
+    - |
+      [[ -z "$PACKAGE_NAME" ]] && echo "PACKAGE_NAME not set" && exit 1
+      [[ -z "$PACKAGE_VERSION" ]] && echo "PACKAGE_VERSION not set" && exit 1
+  script:
+    # Use npm ci for clean installs
+    - npm ci --prefer-offline
+    - npm run generate:proto
+    - npm run build
+    - |
+      # Update package name to include @platform scope if not already scoped
+      if [[ ! "$PACKAGE_NAME" =~ ^@platform/ ]]; then
+        npm pkg set name="@platform/${PACKAGE_NAME}/${PACKAGE_VERSION}"
+      fi
+    - npm version $PACKAGE_VERSION --no-git-tag-version --allow-same-version
+    - npm publish 

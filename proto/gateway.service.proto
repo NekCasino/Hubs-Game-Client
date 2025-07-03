@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+package gamehub.proto.client.service;
+
+import "google/protobuf/timestamp.proto";
+
+service GameService
+{
+    rpc ListGamesAll (ListGamesRequest) returns (ListGamesResult);
+
+    rpc FindPreset (FindPresetRequest) returns (PresetResult);
+
+    rpc CreateSession (CreateSessionRequest) returns (SessionResult);
+
+    rpc CreateFreeSpin (CreateFreeSpinRequest) returns (FreeSpinResult);
+
+    rpc CancelFreeSpin (CancelFreeSpinRequest) returns (FreeSpinResult);
+}
+
+
+message ListGamesRequest {
+}
+
+message ListGamesResult {
+    message CategoryResult {
+        string identity = 1;
+
+        string name = 2;
+
+        map<string, string> images = 3;
+    }
+
+    message ProviderResult {
+        string identity = 1;
+
+        string name = 2;
+
+        map<string, string> images = 3;
+    }
+
+    message GameResult {
+        string identity = 1;
+
+        string name = 2;
+
+        map<string, string> images = 3;
+
+        string provider = 4;
+
+        repeated string categories = 5;
+
+        bool bonus_bet = 6;
+
+        bool bonus_wagering = 7;
+
+        repeated string supported_lang = 8;
+
+        repeated string platforms = 9;
+
+        bool demo_enable = 10;
+
+        bool freespin_enable = 11;
+
+        bool freechip_enable = 12;
+
+        bool jackpot_enable = 13;
+
+        bool bonus_buy_enable = 14;
+    }
+
+    repeated CategoryResult categories = 1;
+
+    repeated ProviderResult providers = 2;
+
+    repeated GameResult games = 3;
+}
+
+
+message FindPresetRequest {
+    string game_identity = 1;
+
+    string currency = 2;
+}
+
+message PresetResult {
+    message Field {
+        string name = 1;
+
+        optional int32 value = 2;
+
+        optional int32 default_value = 3;
+
+        optional int32 min_value = 4;
+
+        optional int32 max_value = 5;
+
+        bool required = 6;
+    }
+
+    string id = 1;
+
+    string name = 2;
+
+    string currency = 3;
+
+    repeated Field fields = 4;
+}
+
+
+message CreateFreeSpinRequest {
+    message Field {
+        string name = 1;
+        int32 value = 2;
+    }
+
+    string game_identity = 1;
+
+    string player_id = 2;
+
+    string currency = 3;
+
+    google.protobuf.Timestamp start_at = 4;
+
+    google.protobuf.Timestamp expire_at = 5;
+
+    string reference_id = 6;
+
+    map<string, int32 > fields = 7;
+}
+
+message CancelFreeSpinRequest {
+    string reference_id = 1;
+
+    string game_identity = 2;
+}
+
+message FreeSpinResult {
+    string reference_id = 1;
+}
+
+
+message CreateSessionRequest {
+    string game_identity = 1;
+
+    optional string player_id = 2;
+
+    string token = 3;
+
+    string currency = 4;
+
+    string lobby_url = 5;
+
+    string locale = 6;
+
+    string platform = 7;
+
+    bool demo = 8;
+}
+
+message SessionResult {
+    string game_launch_url = 1;
+}

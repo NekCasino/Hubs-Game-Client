@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package gamehub.proto.client.service;
+
+service TransactionService {
+    rpc Withdraw (WithdrawRequest) returns (WithdrawResult);
+
+    rpc Deposit (DepositRequest) returns (DepositResult);
+
+    rpc Rollback (RollbackRequest) returns (RollbackResult);
+}
+
+message WithdrawRequest {
+    string player_id = 1;
+
+    string currency = 2;
+
+    int32 amount = 3;
+
+    string game_identity = 4;
+
+    string round_id = 5;
+
+    string transaction_id = 6;
+
+    optional string bonus_code = 7;
+}
+
+message WithdrawResult {
+    string transaction_id = 1;
+
+    int32 used_real_amount = 2;
+    int32 used_bonus_amount = 3;
+}
+
+
+message DepositRequest {
+    string player_id = 1;
+
+    string currency = 2;
+
+    int32 amount = 3;
+
+    string game_identity = 4;
+
+    string round_id = 5;
+
+    string transaction_id = 6;
+
+    optional string bonus_code = 7;
+
+    bool round_end = 8;
+
+    string referenced_transaction_id = 9;
+}
+
+message DepositResult {
+    string transaction_id = 1;
+
+    int32 win_real_amount = 2;
+    int32 win_bonus_amount = 3;
+}
+
+
+message RollbackRequest {
+    string player_id = 1;
+
+    string round_id = 2;
+
+    string transaction_id = 3;
+
+    string referenced_transaction_id = 4;
+}
+
+message RollbackResult {
+    string transaction_id = 1;
+}
