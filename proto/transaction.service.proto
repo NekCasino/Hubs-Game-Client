@@ -24,6 +24,8 @@ message WithdrawRequest {
     string transaction_id = 6;
 
     optional string bonus_code = 7;
+
+    bool round_end = 8;
 }
 
 message WithdrawResult {
