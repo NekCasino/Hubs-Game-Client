@@ -1,0 +1,68 @@
+name: Node.js Package
+on:
+  push:
+    tags:
+      - 'v*.*.*'        # Matches v1.0.0, v2.1.3, etc.
+      - '*.*.*'         # Matches 1.0.0, 2.1.3, etc.
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  publish-gpr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl protobuf-compiler
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://npm.pkg.github.com/
+          cache: 'npm'
+
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "@${GITHUB_REPOSITORY_OWNER,,}:registry=https://npm.pkg.github.com/" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
+      - name: Install gRPC tools
+        run: |
+          npm install -g protoc-gen-grpc-web
+          npm install -g google-protobuf
+          npm install -g protobufjs protobufjs-cli
+          npm install -g typescript
+
+      - name: Generate protobuf files
+        run: npm run generate:proto
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          # Remove 'v' prefix if present (v1.0.0 -> 1.0.0)
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      - name: Update package name and version for GitHub Packages
+        run: |
+          REPO_NAME=$(echo "${GITHUB_REPOSITORY##*/}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+          npm pkg set name="@${GITHUB_REPOSITORY_OWNER,,}/${REPO_NAME}"
+          npm pkg set version="${{ steps.version.outputs.version }}"
+          npm pkg set publishConfig.registry="https://npm.pkg.github.com/"
+
+      - name: Install dependencies and publish
+        run: |
+          npm ci
+          npm run build
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
